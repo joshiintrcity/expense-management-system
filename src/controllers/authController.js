@@ -1,4 +1,4 @@
-const adminModel = require('../models/adminModel');
+﻿const adminModel = require('../models/adminModel');
 const roles = require('../models/roleModel');
 const { generateAuthToken } = require('../utils/jwt');
 
@@ -66,6 +66,49 @@ const login = async (req, res) => {
     }
 };
 
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user?.user_id || req.user?.id;
+        const userEmail = req.user?.email;
+
+        let user = null;
+        if (userId) {
+            user = await adminModel.findAdminById(userId);
+        }
+        if (!user && userEmail) {
+            user = await adminModel.findActiveAdminByEmail(userEmail);
+        }
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        const freshToken = generateAuthToken(user);
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                isActive: !!user.is_active,
+                provider: user.provider
+            },
+            token: freshToken
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 const googleCallback = async (req, res) => {
     try {
         const user = req.user;
@@ -92,7 +135,7 @@ const googleCallback = async (req, res) => {
 
         const authenticationToken = generateAuthToken(user);
 
-        const frontendUrl = process.env.FRONTEND_URL;
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
         return res.redirect(
             `${frontendUrl}/auth/google/success?token=${encodeURIComponent(authenticationToken)}`
@@ -110,5 +153,6 @@ const googleCallback = async (req, res) => {
 
 module.exports = {
     login,
+    getProfile,
     googleCallback
 };

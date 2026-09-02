@@ -1,14 +1,17 @@
-const express = require('express');
+﻿const express = require('express');
 const passport = require('../config/passport');
+const authenticateUser = require('../middleware/authMiddleware');
 
 const {
     login,
+    getProfile,
     googleCallback
 } = require('../controllers/authController');
 
 const router = express.Router();
 
 router.post('/login', login);
+router.get('/me', authenticateUser, getProfile);
 
 router.get(
     '/google',

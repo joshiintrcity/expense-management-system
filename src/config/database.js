@@ -42,7 +42,8 @@ const databaseConnectionPool = mysql.createPool({
     database: process.env.LOCAL_DB_NAME,
     waitForConnections: true,
     connectionLimit: 5,
-    queueLimit: 0
+    queueLimit: 0,
+    dateStrings: true
 });
 
 module.exports = databaseConnectionPool;

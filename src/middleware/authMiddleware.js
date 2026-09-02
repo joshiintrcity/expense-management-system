@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
+﻿const jwt = require('jsonwebtoken');
+const adminModel = require('../models/adminModel');
 
-const authenticateUser = (req, res, next) => {
+const authenticateUser = async (req, res, next) => {
     try {
-         console.log('Authorization Header:', req.headers.authorization);
         const authorizationHeader = req.headers.authorization;
 
         if (!authorizationHeader) {
@@ -26,12 +26,30 @@ const authenticateUser = (req, res, next) => {
 
         const authenticationToken = authorizationParts[1];
 
-        const authenticatedUser = jwt.verify(
+        const decoded = jwt.verify(
             authenticationToken,
             process.env.JWT_SECRET
         );
 
-        req.user = authenticatedUser;
+        // Fetch live user from database to ensure fresh role and active status
+        const userId = decoded.user_id || decoded.id;
+        const liveUser = (userId ? await adminModel.findAdminById(userId) : null)
+                      || (decoded.email ? await adminModel.findActiveAdminByEmail(decoded.email) : null);
+
+        if (!liveUser || !liveUser.is_active) {
+            return res.status(401).json({
+                success: false,
+                message: 'User account is inactive or not found'
+            });
+        }
+
+        req.user = {
+            user_id: liveUser.id,
+            id: liveUser.id,
+            email: liveUser.email,
+            name: liveUser.name,
+            role: liveUser.role
+        };
 
         next();
 
@@ -45,6 +63,5 @@ const authenticateUser = (req, res, next) => {
     }
 };
 
-// Dono import styles support karenge
 module.exports = authenticateUser;
 module.exports.authenticateUser = authenticateUser;

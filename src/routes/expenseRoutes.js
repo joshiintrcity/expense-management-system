@@ -1,8 +1,10 @@
-const express = require('express');
+﻿const express = require('express');
 
 const {
     addExpense,
-    listExpenses
+    listExpenses,
+    updateExpenseStatus,
+    deleteExpense
 } = require('../controllers/expenseController');
 
 const authenticateUser = require('../middleware/authMiddleware');
@@ -19,6 +21,24 @@ router.get(
     '/',
     authenticateUser,
     listExpenses
+);
+
+router.put(
+    '/:id/status',
+    authenticateUser,
+    updateExpenseStatus
+);
+
+router.put(
+    '/:id',
+    authenticateUser,
+    updateExpenseStatus
+);
+
+router.delete(
+    '/:id',
+    authenticateUser,
+    deleteExpense
 );
 
 module.exports = router;
